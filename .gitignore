@@ -1,0 +1,15 @@
+# Ignorar directorios de módulos y paquetes
+node_modules/
+venv_iapos/
+
+# Ignorar archivos de configuración sensibles
+.env
+
+# Ignorar archivos de log
+*.log
+npm-debug.log*
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
+.vscode/ # Puedes ignorar la carpeta .vscode si no quieres compartir configuraciones de tu editor

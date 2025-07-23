@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat de Día Preventivo IAPOS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .chat-container {
+            max-width: 700px;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            background-color: #fff;
+        }
+        .chat-log {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+            scroll-behavior: smooth;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.user {
+            background-color: #e0f7fa;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .message.bot {
+            background-color: #f1f8e9;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+        .input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .input-area button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .input-area button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-log" id="chatLog">
+            <div class="message bot">¡Hola! Soy tu asistente de IAPOS para el programa Día Preventivo. ¿En qué puedo ayudarte hoy?</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userMessage" placeholder="Escribe tu pregunta aquí...">
+            <button id="sendMessage">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const chatLog = document.getElementById('chatLog');
+        const userMessageInput = document.getElementById('userMessage');
+        const sendMessageButton = document.getElementById('sendMessage');
+
+        // Función para añadir mensajes al log del chat
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = text;
+            chatLog.appendChild(messageDiv);
+            chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll al final
+        }
+
+        // Función para enviar el mensaje al backend
+        async function sendMessage() {
+            const message = userMessageInput.value.trim();
+            if (message === '') return;
+
+            addMessage('user', message);
+            userMessageInput.value = ''; // Limpiar input
+
+            try {
+                // Envía la petición a tu servidor Node.js
+                const response = await fetch('http://localhost:3000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    addMessage('bot', data.reply);
+                } else {
+                    addMessage('bot', 'Error: ' + (data.error || 'No se pudo obtener una respuesta.'));
+                }
+            } catch (error) {
+                console.error('Error al enviar el mensaje:', error);
+                addMessage('bot', 'Lo siento, no pude comunicarme con el asistente. Revisa tu conexión.');
+            }
+        }
+
+        // Event listeners
+        sendMessageButton.addEventListener('click', sendMessage);
+        userMessageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
