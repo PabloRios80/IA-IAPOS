@@ -3,133 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat de Día Preventivo IAPOS</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
-        .chat-container {
-            max-width: 700px;
-            margin: 20px auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            height: 600px;
-            background-color: #fff;
-        }
-        .chat-log {
-            flex-grow: 1;
-            padding: 15px;
-            overflow-y: auto;
-            border-bottom: 1px solid #eee;
-            scroll-behavior: smooth;
-        }
-        .message {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        .message.user {
-            background-color: #e0f7fa;
-            align-self: flex-end;
-            margin-left: auto;
-        }
-        .message.bot {
-            background-color: #f1f8e9;
-            align-self: flex-start;
-            margin-right: auto;
-        }
-        .input-area {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid #eee;
-        }
-        .input-area input[type="text"] {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-right: 10px;
-            font-size: 16px;
-        }
-        .input-area button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .input-area button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Día Preventivo IAPOS - Asistente</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+
 </head>
-<body>
-    <div class="chat-container">
-        <div class="chat-log" id="chatLog">
-            <div class="message bot">¡Hola! Soy tu asistente de IAPOS para el programa Día Preventivo. ¿En qué puedo ayudarte hoy?</div>
+<body class="bg-gray-50">
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-500 rounded-full p-2">
+                        <img src="images/logo_iapos.png" alt="Logo IAPOS" class="h-20">
+                    </div>
+                    <h1 class="text-xl font-bold">Asistente Programa Día Preventivo IAPOS</h1>
+                </div>
+
+                <div class="flex justify-end mt-4 md:mt-0">
+                    <button id="show-results-chat-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md text-sm flex-shrink-0 flex items-center justify-center">
+                        <i class="fas fa-notes-medical mr-2"></i> Conocer mis Resultados y Recomendaciones
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="input-area">
-            <input type="text" id="userMessage" placeholder="Escribe tu pregunta aquí...">
-            <button id="sendMessage">Enviar</button>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-2">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Explora el Programa Día Preventivo</h2>
+                <div id="preventive-menu-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </div>
+            </div>
+
+            <div class="md:col-span-1">
+                <div id="chat-widget" class="bg-white rounded-lg shadow-lg flex flex-col h-[600px] border border-gray-200">
+                    <div class="p-4 bg-blue-600 text-white rounded-t-lg">
+                        <h2 class="text-lg font-semibold text-center">Asistente IAPOS</h2>
+                    </div>
+                    <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-4">
+                        <div class="message bot-message">
+                            <p>¡Hola! Soy tu asistente de IAPOS para el programa Día Preventivo. Puedes explorar las categorías de la izquierda o escribir tu pregunta.</p>
+                        </div>
+                    </div>
+                    <div id="chat-input-area" class="p-4 border-t border-gray-200 flex flex-col space-y-2">
+                        <div id="chat-options-container" class="flex flex-wrap gap-2 justify-center">
+                            </div>
+
+                        <div class="flex space-x-2">
+                            <input type="text" id="dni-input" placeholder="Tu DNI (Opcional)"
+                                class="flex-none w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+                            <input type="text" id="user-input" placeholder="Escribe tu mensaje..."
+                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+                            <button id="send-btn" class="flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
     <script>
-        const chatLog = document.getElementById('chatLog');
-        const userMessageInput = document.getElementById('userMessage');
-        const sendMessageButton = document.getElementById('sendMessage');
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const dniInput = document.getElementById('dni-input');
+        const preventiveMenuContainer = document.getElementById('preventive-menu-container');
+        const chatOptionsContainer = document.getElementById('chat-options-container');
+        const showResultsChatBtn = document.getElementById('show-results-chat-btn');
 
-        // Función para añadir mensajes al log del chat
+        // Variable para almacenar el ID del chunk del subtema actualmente seleccionado por el usuario.
+        // Se usa para que, cuando el usuario haga clic en una pregunta predeterminada del sub-menú,
+        // el backend sepa de qué tema específico es el contexto.
+        let currentChatTopicChunkId = null;
+
         function addMessage(sender, text) {
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender);
-            messageDiv.textContent = text;
-            chatLog.appendChild(messageDiv);
-            chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll al final
+            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+            messageDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`; // Reemplazar \n por <br>
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Desplazar al final
         }
 
-        // Función para enviar el mensaje al backend
-        async function sendMessage() {
-            const message = userMessageInput.value.trim();
-            if (message === '') return;
+        // Función para limpiar y mostrar preguntas de un subtema dentro del chat
+        function showSubtopicQuestions(subtopic) {
+            chatOptionsContainer.innerHTML = ''; // Limpia opciones anteriores
 
-            addMessage('user', message);
-            userMessageInput.value = ''; // Limpiar input
+            // Almacena el ID del chunk del subtema actual para que sendMessage lo use
+            currentChatTopicChunkId = subtopic.chunkId;
 
+            // Agrega las preguntas predeterminadas como botones al contenedor de opciones del chat
+            subtopic.questions.forEach(q => {
+                const button = document.createElement('button');
+                button.className = 'option-button'; // Clase CSS definida en style.css para estos botones
+                button.textContent = q;
+                button.onclick = () => {
+                    // Cuando se hace clic en una pregunta, la envía al input y luego al backend
+                    userInput.value = q;
+                    sendMessage();
+                    chatOptionsContainer.innerHTML = ''; // Limpiar opciones después de enviar la pregunta
+                };
+                chatOptionsContainer.appendChild(button);
+            });
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Desplazar al final
+        }
+
+        // Función para renderizar el menú principal de categorías
+        async function renderPreventiveMenu() {
             try {
-                // Envía la petición a tu servidor Node.js
-                const response = await fetch('http://localhost:3000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: message })
-                });
+                // Obtener los datos del menú desde el backend
+                const response = await fetch('/get-preventive-menu');
+                const menuData = await response.json();
 
-                const data = await response.json();
-                if (response.ok) {
-                    addMessage('bot', data.reply);
-                } else {
-                    addMessage('bot', 'Error: ' + (data.error || 'No se pudo obtener una respuesta.'));
-                }
+                preventiveMenuContainer.innerHTML = ''; // Limpiar cualquier contenido anterior
+
+                menuData.forEach(category => {
+                    const categoryCard = document.createElement('div');
+                    // Usamos la clase de color de Tailwind dinámicamente
+                    categoryCard.className = `category-card bg-${category.color}`;
+
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = `category-header bg-${category.color}`;
+                    // Icono de Font Awesome y título de la categoría
+                    categoryHeader.innerHTML = `<i class="fas fa-${category.icon} text-2xl"></i> <span>${category.category}</span>`;
+                    categoryCard.appendChild(categoryHeader);
+
+                    const categoryContent = document.createElement('div');
+                    categoryContent.className = 'category-content'; // Estilo para el contenedor de sub-temas
+
+                    // Añadir botones para cada subtema dentro de la categoría
+                    category.subtopics.forEach(subtopic => {
+                        const subtopicBtn = document.createElement('button');
+                        subtopicBtn.className = 'subtopic-button'; // Clase CSS para los botones de subtemas
+                        subtopicBtn.textContent = subtopic.name;
+                        subtopicBtn.onclick = () => {
+                            // Acción al hacer clic en un subtema del menú principal
+                            addMessage('bot', `Has seleccionado el tema: "${subtopic.name}". Aquí tienes algunas preguntas comunes sobre ${subtopic.name} que puedo responder:`);
+                            showSubtopicQuestions(subtopic); // Muestra las preguntas predeterminadas en el chat
+                            // Desplazar a la vista del chat
+                            document.getElementById('chat-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        };
+                        categoryContent.appendChild(subtopicBtn);
+                    });
+                    categoryCard.appendChild(categoryContent);
+                    preventiveMenuContainer.appendChild(categoryCard);
+                });
             } catch (error) {
-                console.error('Error al enviar el mensaje:', error);
-                addMessage('bot', 'Lo siento, no pude comunicarme con el asistente. Revisa tu conexión.');
+                console.error('Error al cargar el menú preventivo:', error);
+                preventiveMenuContainer.innerHTML = '<p class="text-red-500 text-center">No se pudo cargar el menú de temas. Por favor, intente más tarde.</p>';
             }
         }
 
-        // Event listeners
-        sendMessageButton.addEventListener('click', sendMessage);
-        userMessageInput.addEventListener('keypress', (event) => {
+        // Función sendMessage (principal para enviar mensajes al backend)
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            addMessage('user', message);
+            userInput.value = ''; // Limpiar input de mensaje
+
+            const dni = dniInput.value.trim();
+
+            try {
+                const response = await fetch('/chat', { // Ruta relativa, no 'http://localhost:3000/chat'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        dni: dni,
+                        currentTopicChunkId: currentChatTopicChunkId // Enviamos el ID del chunk del tema actual
+                    }),
+                });
+
+                const data = await response.json();
+                // El backend ahora siempre responde con 'response'
+                addMessage('bot', data.response);
+
+                // Después de cada respuesta del bot, si no estamos en un submenú específico
+                // o si el bot dio una respuesta final, podemos limpiar las opciones del chat
+                // o re-evaluar si mostrar las preguntas del subtema si el usuario se desvió.
+                // Por simplicidad, por ahora limpiaremos las opciones predefinidas.
+                // Podrías implementar lógica más compleja aquí si quieres que las opciones persistan
+                // hasta que el usuario elija algo o cambie de tema.
+                // chatOptionsContainer.innerHTML = '';
+                // No limpiar si el usuario hizo clic en una de las preguntas del subtopic,
+                // ya que la función showSubtopicQuestions() ya las limpia al inicio.
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('bot', 'Error: No se pudo obtener una respuesta del asistente. Por favor, intente de nuevo más tarde.');
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 sendMessage();
             }
         });
+        dniInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                userInput.focus(); // Mueve el foco al input de mensaje después de ingresar DNI
+            }
+        });
+
+        // Listener para el botón de "Conocer Resultados"
+        showResultsChatBtn.addEventListener('click', () => {
+            // Opcional: Desplazar a la vista del chat si no está visible
+            document.getElementById('chat-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            addMessage('bot', '¡Claro! Para consultar tus resultados y recomendaciones del Día Preventivo, por favor, ingresa tu DNI en el campo de texto de abajo y luego haz clic en "Enviar" con el mensaje "Quiero mis resultados".');
+            userInput.value = "Quiero mis resultados"; // Pre-rellena el input
+            dniInput.focus(); // Pone el foco en el campo DNI
+            chatOptionsContainer.innerHTML = ''; // Limpia cualquier opción de subtema
+        });
+
+        // Cargar el menú principal al cargar la página
+        document.addEventListener('DOMContentLoaded', renderPreventiveMenu);
     </script>
 </body>
 </html>
