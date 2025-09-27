@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Día Preventivo IAPOS - Asistente</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
     <link rel="stylesheet" href="style.css">
-
 </head>
 <body class="bg-gray-50">
     <header class="bg-blue-600 text-white shadow-lg">
@@ -18,15 +14,11 @@
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div class="flex items-center space-x-4">
                     <div class="bg-blue-500 rounded-full p-2">
-                        <img src="images/logo_iapos.png" alt="Logo IAPOS" class="h-20">
+                        <img src="logo_iapos.png" alt="Logo IAPOS" class="h-20">
                     </div>
                     <h1 class="text-xl font-bold">Asistente Programa Día Preventivo IAPOS</h1>
                 </div>
-
                 <div class="flex justify-end mt-4 md:mt-0">
-                    <button id="show-results-chat-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md text-sm flex-shrink-0 flex items-center justify-center">
-                        <i class="fas fa-notes-medical mr-2"></i> Conocer mis Resultados y Recomendaciones
-                    </button>
                 </div>
             </div>
         </div>
@@ -34,10 +26,25 @@
 
     <main class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="md:col-span-2">
+            <div id="welcome-content" class="md:col-span-2 flex flex-col items-center justify-center text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Bienvenido al Programa Día Preventivo</h2>
+                <p class="text-gray-600 mb-8 max-w-lg">
+                    ¿Te gustaría explorar el programa o ya eres parte de él? Selecciona una de las opciones para empezar.
+                </p>
+                <div class="flex flex-col space-y-4">
+                    <a href="#" id="option-2-btn" class="px-8 py-4 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 transition-colors">
+                        Quiero conocer el programa
+                    </a>
+                    <a href="hojaindex.html" id="start-day-btn" class="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors">
+                        Iniciar Día Preventivo
+                    </a>
+                </div>
+            </div>
+
+            <div id="main-content" class="md:col-span-2 hidden">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Explora el Programa Día Preventivo</h2>
                 <div id="preventive-menu-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    </div>
+                </div>
             </div>
 
             <div class="md:col-span-1">
@@ -47,16 +54,13 @@
                     </div>
                     <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-4">
                         <div class="message bot-message">
-                            <p>¡Hola! Soy tu asistente de IAPOS para el programa Día Preventivo. Puedes explorar las categorías de la izquierda o escribir tu pregunta.</p>
+                            <p>¡Hola! Soy tu asistente de IAPOS para el programa Día Preventivo. Puedes explorar las opciones o escribirme tu pregunta.</p>
                         </div>
                     </div>
                     <div id="chat-input-area" class="p-4 border-t border-gray-200 flex flex-col space-y-2">
                         <div id="chat-options-container" class="flex flex-wrap gap-2 justify-center">
-                            </div>
-
+                        </div>
                         <div class="flex space-x-2">
-                            <input type="text" id="dni-input" placeholder="Tu DNI (Opcional)"
-                                class="flex-none w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
                             <input type="text" id="user-input" placeholder="Escribe tu mensaje..."
                                 class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
                             <button id="send-btn" class="flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -68,85 +72,142 @@
             </div>
         </div>
     </main>
-
+    
     <script>
+        // Definiciones de Variables
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
-        const dniInput = document.getElementById('dni-input');
         const preventiveMenuContainer = document.getElementById('preventive-menu-container');
         const chatOptionsContainer = document.getElementById('chat-options-container');
-        const showResultsChatBtn = document.getElementById('show-results-chat-btn');
+        const welcomeContent = document.getElementById('welcome-content');
+        const mainContent = document.getElementById('main-content');
+        const option2Btn = document.getElementById('option-2-btn');
+        const startDayBtn = document.getElementById('start-day-btn');
+        const chatInputArea = document.getElementById('chat-input-area');
 
-        // Variable para almacenar el ID del chunk del subtema actualmente seleccionado por el usuario.
-        // Se usa para que, cuando el usuario haga clic en una pregunta predeterminada del sub-menú,
-        // el backend sepa de qué tema específico es el contexto.
         let currentChatTopicChunkId = null;
+        let dniSession = null;
+        let isAwaitingDNI = false;
+
+        // --- Funciones del Chat ---
 
         function addMessage(sender, text) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-            messageDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`; // Reemplazar \n por <br>
+            messageDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Desplazar al final
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Función para limpiar y mostrar preguntas de un subtema dentro del chat
+        function showMainContent() {
+            welcomeContent.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            document.getElementById('chat-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Función auxiliar para manejar la comunicación con el servidor (ASÍNCRONA)
+        async function sendMessageToServer(message, dni) {
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        dni: dni,
+                        currentTopicChunkId: currentChatTopicChunkId
+                    }),
+                });
+
+                const data = await response.json();
+                
+                if (data.action === "request_dni") {
+                    addMessage('bot', data.response);
+                    isAwaitingDNI = true;
+                    userInput.placeholder = "Ingresa tu DNI...";
+                    userInput.focus();
+                } else if (data.action === "redirect_to_dashboard" && data.targetUrl) {
+                    window.location.href = data.targetUrl;
+                } else {
+                    addMessage('bot', data.response);
+                }
+
+            } catch (error) {
+                console.error('Error en sendMessageToServer:', error);
+                addMessage('bot', 'Error: No se pudo obtener una respuesta del asistente. Por favor, intenta de nuevo más tarde.');
+            }
+        }
+
+        // Lógica principal de envío de mensaje (SINCRONA - define el flujo)
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            addMessage('user', message);
+            userInput.value = '';
+
+            if (isAwaitingDNI) {
+                temporaryDNIInput(message);
+                return;
+            }
+
+            sendMessageToServer(message, dniSession);
+        }
+
+        function temporaryDNIInput(message) {
+            const cleanDNI = message.replace(/[^0-9]/g, '');
+            if (cleanDNI.length >= 7 && cleanDNI.length <= 8) {
+                dniSession = cleanDNI;
+                isAwaitingDNI = false;
+                const originalMessage = "Quiero conocer mis recomendaciones"; 
+                addMessage('bot', `Gracias. Buscando tus resultados con el DNI ${dniSession}...`);
+                sendMessageToServer(originalMessage, dniSession);
+                userInput.placeholder = "Escribe tu mensaje...";
+            } else {
+                addMessage('bot', 'El formato del DNI no parece correcto. Por favor, ingresa tu DNI (solo números, 7 u 8 dígitos).');
+                userInput.placeholder = "Ingresa tu DNI...";
+            }
+        }
+        
         function showSubtopicQuestions(subtopic) {
-            chatOptionsContainer.innerHTML = ''; // Limpia opciones anteriores
-
-            // Almacena el ID del chunk del subtema actual para que sendMessage lo use
+            chatOptionsContainer.innerHTML = '';
             currentChatTopicChunkId = subtopic.chunkId;
-
-            // Agrega las preguntas predeterminadas como botones al contenedor de opciones del chat
             subtopic.questions.forEach(q => {
                 const button = document.createElement('button');
-                button.className = 'option-button'; // Clase CSS definida en style.css para estos botones
+                button.className = 'option-button';
                 button.textContent = q;
                 button.onclick = () => {
-                    // Cuando se hace clic en una pregunta, la envía al input y luego al backend
                     userInput.value = q;
-                    sendMessage();
-                    chatOptionsContainer.innerHTML = ''; // Limpiar opciones después de enviar la pregunta
+                    sendMessage(); // ¡Ahora llama a la función global sendMessage!
+                    chatOptionsContainer.innerHTML = '';
                 };
                 chatOptionsContainer.appendChild(button);
             });
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Desplazar al final
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Función para renderizar el menú principal de categorías
         async function renderPreventiveMenu() {
             try {
-                // Obtener los datos del menú desde el backend
                 const response = await fetch('/get-preventive-menu');
                 const menuData = await response.json();
-
-                preventiveMenuContainer.innerHTML = ''; // Limpiar cualquier contenido anterior
+                preventiveMenuContainer.innerHTML = '';
 
                 menuData.forEach(category => {
                     const categoryCard = document.createElement('div');
-                    // Usamos la clase de color de Tailwind dinámicamente
                     categoryCard.className = `category-card bg-${category.color}`;
-
                     const categoryHeader = document.createElement('div');
                     categoryHeader.className = `category-header bg-${category.color}`;
-                    // Icono de Font Awesome y título de la categoría
                     categoryHeader.innerHTML = `<i class="fas fa-${category.icon} text-2xl"></i> <span>${category.category}</span>`;
                     categoryCard.appendChild(categoryHeader);
-
                     const categoryContent = document.createElement('div');
-                    categoryContent.className = 'category-content'; // Estilo para el contenedor de sub-temas
-
-                    // Añadir botones para cada subtema dentro de la categoría
+                    categoryContent.className = 'category-content';
                     category.subtopics.forEach(subtopic => {
                         const subtopicBtn = document.createElement('button');
-                        subtopicBtn.className = 'subtopic-button'; // Clase CSS para los botones de subtemas
+                        subtopicBtn.className = 'subtopic-button';
                         subtopicBtn.textContent = subtopic.name;
                         subtopicBtn.onclick = () => {
-                            // Acción al hacer clic en un subtema del menú principal
                             addMessage('bot', `Has seleccionado el tema: "${subtopic.name}". Aquí tienes algunas preguntas comunes sobre ${subtopic.name} que puedo responder:`);
-                            showSubtopicQuestions(subtopic); // Muestra las preguntas predeterminadas en el chat
-                            // Desplazar a la vista del chat
+                            showSubtopicQuestions(subtopic);
                             document.getElementById('chat-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
                         };
                         categoryContent.appendChild(subtopicBtn);
@@ -159,76 +220,60 @@
                 preventiveMenuContainer.innerHTML = '<p class="text-red-500 text-center">No se pudo cargar el menú de temas. Por favor, intente más tarde.</p>';
             }
         }
-
-        // Función sendMessage (principal para enviar mensajes al backend)
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (message === '') return;
-
-            addMessage('user', message);
-            userInput.value = ''; // Limpiar input de mensaje
-
-            const dni = dniInput.value.trim();
-
-            try {
-                const response = await fetch('/chat', { // Ruta relativa, no 'http://localhost:3000/chat'
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        dni: dni,
-                        currentTopicChunkId: currentChatTopicChunkId // Enviamos el ID del chunk del tema actual
-                    }),
-                });
-
-                const data = await response.json();
-                // El backend ahora siempre responde con 'response'
-                addMessage('bot', data.response);
-
-                // Después de cada respuesta del bot, si no estamos en un submenú específico
-                // o si el bot dio una respuesta final, podemos limpiar las opciones del chat
-                // o re-evaluar si mostrar las preguntas del subtema si el usuario se desvió.
-                // Por simplicidad, por ahora limpiaremos las opciones predefinidas.
-                // Podrías implementar lógica más compleja aquí si quieres que las opciones persistan
-                // hasta que el usuario elija algo o cambie de tema.
-                // chatOptionsContainer.innerHTML = '';
-                // No limpiar si el usuario hizo clic en una de las preguntas del subtopic,
-                // ya que la función showSubtopicQuestions() ya las limpia al inicio.
-
-            } catch (error) {
-                console.error('Error:', error);
-                addMessage('bot', 'Error: No se pudo obtener una respuesta del asistente. Por favor, intente de nuevo más tarde.');
-            }
+        
+        function showDefaultOptions() {
+            chatOptionsContainer.innerHTML = '';
+            const options = [
+                { text: "Quiero conocer mis recomendaciones", message: "Quiero conocer mis recomendaciones" },
+                { text: "Explorar temas del programa", message: "Explorar temas del programa" }
+            ];
+            
+            options.forEach(opt => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = opt.text;
+                button.onclick = () => {
+                    if (opt.message === "Explorar temas del programa") {
+                        showMainContent();
+                        renderPreventiveMenu();
+                        addMessage('bot', '¡Excelente! Aquí tienes una guía de temas para explorar el programa Día Preventivo.');
+                    } else {
+                        userInput.value = opt.message;
+                        sendMessage();
+                    }
+                    chatOptionsContainer.innerHTML = '';
+                };
+                chatOptionsContainer.appendChild(button);
+            });
         }
 
-        // Event Listeners
+        // --- Event Listeners ---
+
+        option2Btn.addEventListener('click', (event) => {
+            event.preventDefault();
+            showMainContent();
+            renderPreventiveMenu();
+            showDefaultOptions();
+            addMessage('bot', '¡Excelente! Aquí tienes una guía de temas para explorar el programa Día Preventivo.');
+        });
+
+        startDayBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.location.href = 'hojaindex.html';
+        });
+
         sendBtn.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 sendMessage();
             }
         });
-        dniInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                userInput.focus(); // Mueve el foco al input de mensaje después de ingresar DNI
-            }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            welcomeContent.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            showDefaultOptions();
         });
-
-        // Listener para el botón de "Conocer Resultados"
-        showResultsChatBtn.addEventListener('click', () => {
-            // Opcional: Desplazar a la vista del chat si no está visible
-            document.getElementById('chat-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            addMessage('bot', '¡Claro! Para consultar tus resultados y recomendaciones del Día Preventivo, por favor, ingresa tu DNI en el campo de texto de abajo y luego haz clic en "Enviar" con el mensaje "Quiero mis resultados".');
-            userInput.value = "Quiero mis resultados"; // Pre-rellena el input
-            dniInput.focus(); // Pone el foco en el campo DNI
-            chatOptionsContainer.innerHTML = ''; // Limpia cualquier opción de subtema
-        });
-
-        // Cargar el menú principal al cargar la página
-        document.addEventListener('DOMContentLoaded', renderPreventiveMenu);
     </script>
 </body>
 </html>

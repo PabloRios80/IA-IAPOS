@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Día Preventivo - IAPOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#003366',
+                        secondary: '#ADD8E6',
+                        accent: '#D53F8C',
+                        warning: '#DD6B20',
+                        info: '#4299E1',
+                        'iapos-bg-light': '#f8f9fa',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="/style.css" rel="stylesheet">
+    <script src="/hojaform.js"></script>
+</head>
+<body class="bg-iapos-bg-light font-sans iapos-body">
+    <div class="min-h-screen flex flex-col">
+        <header class="iapos-header shadow-md"> 
+            <div class="container mx-auto px-4 py-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <a href="/" class="flex items-center mb-4 md:mb-0">
+                        <img src="logo_iapos.png">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Día Preventivo</h1>
+                            <p class="text-sm text-gray-600">Programa de Salud Preventiva - IAPOS</p>
+                        </div>
+                    </a>
+                    <div class="flex items-center space-x-4">
+                        
+                        <button class="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-300">
+                            <i class="fas fa-user-circle mr-2"></i> Acceso Profesionales
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="bg-white shadow-sm">
+            <div class="container mx-auto px-4">
+                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div id="formProgress" class="h-full progress-bar bg-primary" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <main class="flex-grow container mx-auto px-4 py-8">
+            <div id="formSection" class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div id="welcomeScreen" class="p-8 text-center">
+                        
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Bienvenido a Día Preventivo</h2>
+                        <p class="text-gray-500 mb-8">Este programa le permitirá conocer qué estudios preventivos son recomendables para usted según su edad, sexo y factores de riesgo.</p>
+                    
+                        <div class="mb-8">
+                            <p class="text-gray-700 mb-2">Si es la primera vez que va a completar su hoja de vida empiece por aquí:</p>
+                            <button id="startQuestionnaireButton" class="bg-primary hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition duration-300">
+                                Hoja de Vida <i class="fas fa-file-medical ml-2"></i>
+                            </button>
+                        </div>
+                    
+                        <div>
+                            <p class="text-gray-700 mb-2">Si usted ya completó su hoja de vida y quiere ver sus recomendaciones preventivas haga click aquí:</p>
+                            <button id="viewRecommendationsButton" class="bg-secondary hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition duration-300">
+                                Ver Recomendaciones de su Hoja de Vida <i class="fas fa-eye ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="mainForm" class="p-8 hidden">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Cuestionario de Salud Preventiva</h2>
+    
+                        <div id="identificationInfo" class="form-step mb-10" data-step="1">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</span>
+                                Identificación
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="relative">
+                                    <input type="text" id="dni" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " pattern="\d{7,8}" maxlength="8" required>
+                                    <label for="dni" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">DNI</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="relative date-mask">
+                                    <input type="text" id="birthDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " maxlength="10" pattern="\d{2}/\d{2}/\d{4}" required>
+                                    <label for="birthDate" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Fecha de nacimiento</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="relative">
+                                    <input type="text" id="age" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-gray-100" readonly>
+                                    <label for="age" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Edad calculada</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="relative">
+                                        <input type="text" id="apellido" name="apellido" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                        <label for="apellido" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Apellido</label>
+                                        <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="relative">
+                                        <input type="text" id="nombre" name="nombre" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                        <label for="nombre" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Nombre</label>
+                                        <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-6">
+                                <button type="button" id="nextBtn1" class="bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">Siguiente</button>
+                            </div>
+                        </div>
+                        <div id="contactInfo" class="form-step hidden mb-10">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</span>
+                                Información de Contacto
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="relative">
+                                    <input type="email" id="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                    <label for="email" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Correo electrónico</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="relative">
+                                    <input type="tel" id="phone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                    <label for="phone" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Teléfono</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prevBtn2" class="bg-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">Anterior</button>
+                                <button type="button" id="nextBtn2" class="bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">Siguiente</button>
+                            </div>
+                        </div>
+                    
+                        <div id="personalInfo" class="form-step hidden mb-10">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">3</span>
+                                Información Personal
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Sexo biológico</label>
+                                    <div class="flex space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="biologicalSex" value="masculino" class="h-5 w-5 text-primary focus:ring-primary border-gray-300" required>
+                                            <span class="ml-2">Masculino</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="biologicalSex" value="femenino" class="h-5 w-5 text-primary focus:ring-primary border-gray-300" required>
+                                            <span class="ml-2">Femenino</span>
+                                        </label>
+                                    </div>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Género autopercibido</label>
+                                    <select id="genderIdentity" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="masculino">Masculino</option>
+                                        <option value="femenino">Femenino</option>
+                                        <option value="no-binario">No binario</option>
+                                        <option value="otro">Otro</option>
+                                        <option value="prefiero-no-decir">Prefiero no decir</option>
+                                    </select>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" id="height" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                    <label for="height" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Altura (cm)</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" id="weight" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary peer" placeholder=" " required>
+                                    <label for="weight" class="floating-label absolute left-4 top-1/2 text-gray-500 pointer-events-none">Peso (kg)</label>
+                                    <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                                </div>
+                                <div class="md:col-span-2 bg-blue-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 mb-2"><i class="fas fa-info-circle text-primary mr-2"></i>Con tu altura y peso calcularemos automáticamente tu Índice de Masa Corporal (IMC)</p>
+                                    <div class="flex items-center">
+                                        <span class="font-medium mr-2">Tu IMC:</span>
+                                        <span id="bmiValue" class="font-bold text-primary">--</span>
+                                        <span id="bmiCategory" class="ml-2 text-sm px-2 py-1 rounded-full"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prevBtn3" class="bg-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">Anterior</button>
+                                <button type="button" id="nextBtn3" class="bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">Siguiente</button>
+                            </div>
+                        </div>
+
+                        <div id="healthConditions" class="form-step hidden mb-10">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">4</span>
+                                Condiciones de Salud Personales
+                            </h3>
+                            <p class="text-gray-600 mb-6">Por favor, indique si conoce tener alguna de las siguientes condiciones. Marque "No lo sé" si no ha sido evaluado.</p>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Hipertensión:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="hypertensionSi" name="hypertension" value="si" class="mr-2" required>
+                                    <label for="hypertensionSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="hypertensionNo" name="hypertension" value="no" class="ml-4 mr-2" required>
+                                    <label for="hypertensionNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="hypertensionNoSabe" name="hypertension" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="hypertensionNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                                <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Diabetes:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="diabetesSi" name="diabetes" value="si" class="mr-2" required>
+                                    <label for="diabetesSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="diabetesNo" name="diabetes" value="no" class="ml-4 mr-2" required>
+                                    <label for="diabetesNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="diabetesNoSabe" name="diabetes" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="diabetesNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                                <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Colesterol alto:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="cholesterolSi" name="cholesterol" value="si" class="mr-2" required>
+                                    <label for="cholesterolSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="cholesterolNo" name="cholesterol" value="no" class="ml-4 mr-2" required>
+                                    <label for="cholesterolNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="cholesterolNoSabe" name="cholesterol" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="cholesterolNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                                <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Depresión diagnosticada:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="depressionSi" name="depression" value="si" class="mr-2" required>
+                                    <label for="depressionSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="depressionNo" name="depression" value="no" class="ml-4 mr-2" required>
+                                    <label for="depressionNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="depressionNoSabe" name="depression" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="depressionNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                                <span class="error-message text-red-500 text-sm mt-1 block"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Hago muy poca actividad física:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="physicalActivityLowSi" name="physicalActivityLow" value="si" class="mr-2" required>
+                                    <label for="physicalActivityLowSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="physicalActivityLowNo" name="physicalActivityLow" value="no" class="ml-4 mr-2" required>
+                                    <label for="physicalActivityLowNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="physicalActivityLowNoSabe" name="physicalActivityLow" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="physicalActivityLowNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Paso mucho tiempo sentado/a:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="sedentarySi" name="sedentary" value="si" class="mr-2" required>
+                                    <label for="sedentarySi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="sedentaryNo" name="sedentary" value="no" class="ml-4 mr-2" required>
+                                    <label for="sedentaryNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="sedentaryNoSabe" name="sedentary" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="sedentaryNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Tengo problemas excesivos de alcohol y/o drogas:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="drugUseExcessiveSi" name="drugUseExcessive" value="si" class="mr-2" required>
+                                    <label for="drugUseExcessiveSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="drugUseExcessiveNo" name="drugUseExcessive" value="no" class="ml-4 mr-2" required>
+                                    <label for="drugUseExcessiveNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="drugUseExcessiveNoSabe" name="drugUseExcessive" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="drugUseExcessiveNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Siento mucho stress y/o nervios y/o ansiedad y/o miedos excesivos:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="stressAnxietyExcessiveSi" name="stressAnxietyExcessive" value="si" class="mr-2" required>
+                                    <label for="stressAnxietyExcessiveSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="stressAnxietyExcessiveNo" name="stressAnxietyExcessive" value="no" class="ml-4 mr-2" required>
+                                    <label for="stressAnxietyExcessiveNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="stressAnxietyExcessiveNoSabe" name="stressAnxietyExcessive" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="stressAnxietyExcessiveNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Vivo muy preocupado/a por mi salud:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="healthConcernExcessiveSi" name="healthConcernExcessive" value="si" class="mr-2" required>
+                                    <label for="healthConcernExcessiveSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="healthConcernExcessiveNo" name="healthConcernExcessive" value="no" class="ml-4 mr-2" required>
+                                    <label for="healthConcernExcessiveNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="healthConcernExcessiveNoSabe" name="healthConcernExcessive" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="healthConcernExcessiveNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Uso mucho tiempo el celular o pantallas por cuestiones no laborales:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="screenTimeExcessiveSi" name="screenTimeExcessive" value="si" class="mr-2" required>
+                                    <label for="screenTimeExcessiveSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="screenTimeExcessiveNo" name="screenTimeExcessive" value="no" class="ml-4 mr-2" required>
+                                    <label for="screenTimeExcessiveNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="screenTimeExcessiveNoSabe" name="screenTimeExcessive" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="screenTimeExcessiveNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prevBtn3" class="bg-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">Anterior</button>
+                                <button type="button" id="nextBtn3" class="bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">Siguiente</button>
+                            </div>
+                        </div>
+
+                        <div id="habitsInfo" class="form-step hidden mb-10">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">5</span>
+                                Hábitos y Estilo de Vida
+                            </h3>
+                            <h2 class="text-xl font-semibold mb-4">Información sobre Hábitos</h2>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Tabaquismo:</label>
+                                <div class="flex flex-col">
+                                    <div class="flex items-center mb-2">
+                                        <input type="radio" id="smokingNever" name="smokingStatus" value="nunca" class="mr-2" required>
+                                        <label for="smokingNever" class="text-gray-700">Nunca fumó</label>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <input type="radio" id="smokingEx" name="smokingStatus" value="ex_fumador" class="mr-2" required>
+                                        <label for="smokingEx" class="text-gray-700">Ex fumador</label>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <input type="radio" id="smokingLess10" name="smokingStatus" value="menos_de_10" class="mr-2" required>
+                                        <label for="smokingLess10" class="text-gray-700">Menos de 10 por día</label>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <input type="radio" id="smoking10to20" name="smokingStatus" value="entre_10_y_20" class="mr-2" required>
+                                        <label for="smoking10to20" class="text-gray-700">Entre 10 y 20 por día</label>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <input type="radio" id="smokingMore20" name="smokingStatus" value="mas_de_20" class="mr-2" required>
+                                        <label for="smokingMore20" class="text-gray-700">Más de 20 por día</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">En el caso de ser fumador o ex-fumador: ¿Fumó por más de 20 años?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="smokingDurationYes" name="smokingDuration" value="si" class="mr-2" required>
+                                    <label for="smokingDurationYes" class="text-gray-700">Sí</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="smokingDurationNo" name="smokingDuration" value="no" class="mr-2" required>
+                                    <label for="smokingDurationNo" class="text-gray-700">No</label>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prevBtn4" class="bg-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">Anterior</button>
+                                <button type="button" id="nextBtn4" class="bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">Siguiente</button>
+                            </div>
+                        </div>
+                        <div id="familyHistory" class="form-step hidden mb-10">
+                            <h3 class="text-xl font-semibold text-primary mb-4 flex items-center">
+                                <span class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">6</span>
+                                Antecedentes Familiares
+                            </h3>
+                            <h2 class="text-xl font-semibold mb-4">Antecedentes Familiares</h2>
+                            <p class="text-gray-700 mb-4">Respecto a sus antecedentes Familiares (Abuelas/os, Madre, Padre, hermanos/as):</p>
+                        
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Alguno/a tiene/tuvo Hipertensión Arterial (presión alta)?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarHipertensionSi" name="familiarHipertension" value="si" class="mr-2" required>
+                                    <label for="familiarHipertensionSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarHipertensionNo" name="familiarHipertension" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarHipertensionNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarHipertensionNoSabe" name="familiarHipertension" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarHipertensionNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Diabetes?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarDiabetesSi" name="familiarDiabetes" value="si" class="mr-2" required>
+                                    <label for="familiarDiabetesSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarDiabetesNo" name="familiarDiabetes" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarDiabetesNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarDiabetesNoSabe" name="familiarDiabetes" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarDiabetesNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Problemas de adicciones (Alcohol, drogas, Tabaquismo, juego patológico? otros)?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarAdiccionesSi" name="familiarAdicciones" value="si" class="mr-2" required>
+                                    <label for="familiarAdiccionesSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarAdiccionesNo" name="familiarAdicciones" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarAdiccionesNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarAdiccionesNoSabe" name="familiarAdicciones" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarAdiccionesNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Obesidad?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarObesidadSi" name="familiarObesidad" value="si" class="mr-2" required>
+                                    <label for="familiarObesidadSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarObesidadNo" name="familiarObesidad" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarObesidadNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarObesidadNoSabe" name="familiarObesidad" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarObesidadNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Depresión?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarDepresionSi" name="familiarDepresion" value="si" class="mr-2" required>
+                                    <label for="familiarDepresionSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarDepresionNo" name="familiarDepresion" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarDepresionNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarDepresionNoSabe" name="familiarDepresion" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarDepresionNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">¿Violencia Familiar, conyugal, abusos de cualquier tipo?</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="familiarViolenciaAbusoSi" name="familiarViolenciaAbuso" value="si" class="mr-2" required>
+                                    <label for="familiarViolenciaAbusoSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="familiarViolenciaAbusoNo" name="familiarViolenciaAbuso" value="no" class="ml-4 mr-2" required>
+                                    <label for="familiarViolenciaAbusoNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="familiarViolenciaAbusoNoSabe" name="familiarViolenciaAbuso" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="familiarViolenciaAbusoNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Cáncer de colon en familiares cercanos:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="colonCancerSi" name="colonCancer" value="si" class="mr-2" required>
+                                    <label for="colonCancerSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="colonCancerNo" name="colonCancer" value="no" class="ml-4 mr-2" required>
+                                    <label for="colonCancerNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="colonCancerNoSabe" name="colonCancer" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="colonCancerNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Cáncer de mama en familiares cercanos:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="breastCancerSi" name="breastCancer" value="si" class="mr-2" required>
+                                    <label for="breastCancerSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="breastCancerNo" name="breastCancer" value="no" class="ml-4 mr-2" required>
+                                    <label for="breastCancerNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="breastCancerNoSabe" name="breastCancer" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="breastCancerNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Cáncer de cuello uterino en familiares cercanos:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="cervicalCancerSi" name="cervicalCancer" value="si" class="mr-2" required>
+                                    <label for="cervicalCancerSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="cervicalCancerNo" name="cervicalCancer" value="no" class="ml-4 mr-2" required>
+                                    <label for="cervicalCancerNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="cervicalCancerNoSabe" name="cervicalCancer" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="cervicalCancerNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-bold mb-2">Cáncer de próstata en familiares cercanos:</label>
+                                <div class="flex items-center">
+                                    <input type="radio" id="prostateCancerSi" name="prostateCancer" value="si" class="mr-2" required>
+                                    <label for="prostateCancerSi" class="text-gray-700">Sí</label>
+                                    <input type="radio" id="prostateCancerNo" name="prostateCancer" value="no" class="ml-4 mr-2" required>
+                                    <label for="prostateCancerNo" class="text-gray-700">No</label>
+                                    <input type="radio" id="prostateCancerNoSabe" name="prostateCancer" value="no_sabe" class="ml-4 mr-2" required>
+                                    <label for="prostateCancerNoSabe" class="text-gray-700">No lo sabe</label>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prevBtn5" class="bg-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">Anterior</button>
+                            </div>
+                            <div class="flex justify-end mt-8">
+                                <button id="saveButton" class="bg-secondary hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition duration-300">
+                                    Guardar y C <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>
+
+                            
+                                    <div id="recommendationsByCategory" class="space-y-6">
+                                            </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const viewRecommendationsButton = document.getElementById('viewRecommendationsButton');
+                            
+                                    viewRecommendationsButton.addEventListener('click', function() {
+                                        // Redirigir a la misma ruta que se usa después de llenar el formulario
+                                        window.location.href = 'ver_recomendaciones.html'; // Asegúrate de que esta sea la ruta correcta
+                                    });
+                                });
+                            </script>

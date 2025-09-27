@@ -1,5 +1,3 @@
-// 1. Cargar variables de entorno al inicio de todo
-require('dotenv').config();
 
 // 2. Importar módulos necesarios
 const express = require('express');
@@ -7,6 +5,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cors = require('cors');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
+require('dotenv').config();
 const path = require('path'); // Para servir archivos estáticos correctamente
 
 // 3. Configurar la aplicación Express
@@ -71,6 +70,7 @@ async function getDataFromSpecificSheet(sheetName) {
     const rows = await sheet.getRows();
     return rows.map(row => row.toObject());
 }
+
 
 // Configuración de los campos del Google Sheet para procesar resultados
 const fieldsConfig = [
@@ -422,7 +422,7 @@ async function generarRecomendaciones(resultadosDiaPreventivo) {
 // 5. Inicializar la API de Gemini
 const genAI = new GoogleGenerativeAI(API_KEY);
 // Puedes elegir entre "gemini-pro" (para texto) o "gemini-1.5-flash" (más rápido, ideal para chat)
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // 6. Configurar Middlewares de Express
 app.use(express.json()); // Habilita el parseo de JSON en el cuerpo de las peticiones
@@ -614,77 +614,198 @@ app.get('/get-preventive-menu', (req, res) => {
     res.json(IAPOS_PREVENTIVE_PROGRAM_MENU);
 });
 
-
-// Ruta principal para el chat
+// RUTA PRINCIPAL DE CHAT Y GESTIÓN DE CONSULTAS
 app.post('/chat', async (req, res) => {
-    const { message, dni, currentTopicChunkId } = req.body; // Recibe también el DNI y el chunkId
+    // dni y currentTopicChunkId son opcionales, solo se envían si están disponibles en el frontend
+    const { message, dni, currentTopicChunkId } = req.body; 
 
     if (!message) {
         return res.status(400).json({ error: "El mensaje es requerido." });
     }
 
     try {
-        let fullPrompt = `Eres un asistente virtual amable y servicial de IAPOS, enfocado en brindar información precisa y útil sobre el programa "Día Preventivo". Responde siempre basándote estrictamente en la información proporcionada. Si la información no está disponible en tu base de conocimiento, o si la pregunta es irrelevante para el programa Día Preventivo o el usuario no es de IAPOS, indícalo claramente y sugiere que consulten las fuentes oficiales de IAPOS o a un médico. No inventes información.\n\n`;
-        
-        let infoContext = '';
+        const lowerMessage = message.toLowerCase().trim();
 
-        // Prioridad 1: Si el usuario pide sus resultados y proporciona DNI
-        const checkResultsKeywords = ['mis resultados', 'resultados', 'quiro mis resultados', 'ver mis resultados', 'consulta mis resultados'];
-        const isAskingForResults = checkResultsKeywords.some(keyword => message.toLowerCase().includes(keyword)) || message.toLowerCase().includes('quiero mis resultados');
+        // --- 1. GESTIÓN DE CONSULTA DE RESULTADOS (PRIORIDAD AL DNI) ---
+        const checkResultsKeywords = ['mis resultados', 'resultados', 'quiero mis recomendaciones', 'ver mis resultados', 'consulta mis resultados', 'mi dni'];
+        const isAskingForResults = checkResultsKeywords.some(keyword => lowerMessage.includes(keyword));
 
-        if (isAskingForResults && dni) {
+        // Si el usuario pide resultados Y ya se tiene el DNI (o lo acaba de ingresar)
+        if (isAskingForResults && dni && doc) {
             try {
+                // La función 'generarRecomendaciones' actual es la que debe ser mejorada en el siguiente paso.
                 const resultados = await obtenerResultadosDiaPreventivoPorDNI(dni);
                 if (resultados) {
-                    const recomendaciones = await generarRecomendaciones(resultados);
+                    // Llamada a la función que usa Gemini para interpretar
+                    const recomendaciones = await generarRecomendaciones(resultados); 
                     return res.json({ response: recomendaciones });
                 } else {
-                    return res.json({ response: `Lo siento, no encontré resultados del Día Preventivo para el DNI ${dni}. Por favor, verifica que el DNI sea correcto y que estés afiliado al programa. También puedes consultar esta información directamente con IAPOS.` });
+                    return res.json({ response: `Lo siento, no encontré resultados del Día Preventivo para el DNI ${dni}. Por favor, verifica que el DNI sea correcto o que hayas participado del programa.` });
                 }
             } catch (error) {
                 console.error('Error al procesar consulta de resultados por DNI:', error);
-                // Si la hoja no se inicializó, el error de getDataFromSpecificSheet lo manejará
+                // NOTA: Si `doc` falla en la inicialización, el error es capturado aquí.
                 if (error.message.includes('Google Sheet document not initialized')) {
-                    return res.status(500).json({ error: 'La funcionalidad de consulta de resultados no está disponible en este momento debido a un problema de configuración. Por favor, inténtalo más tarde.' });
+                    return res.json({ response: `Lo siento, el sistema de consulta de resultados por DNI no está disponible en este momento. Por favor, intenta más tarde.` });
                 }
                 return res.status(500).json({ error: 'Ocurrió un error al buscar tus resultados. Por favor, intenta de nuevo más tarde.' });
             }
         }
         
-        // Prioridad 2: Buscar información en la base de conocimiento de IAPOS (RAG)
-        infoContext = buscarInfoIAPOS(message, currentTopicChunkId);
+        // --- 2. DETECCIÓN DEL MODO Y ROL PARA PREGUNTAS GENERALES ---
+        let promptRole = "";
+        let useStrictRAG = false; // Bandera para saber si debe ajustarse estrictamente al RAG
+        let topicName = "salud y prevención"; // Tema por defecto
+
+        // Intentar obtener el nombre del tema para el prompt de experto
+        if (currentTopicChunkId) {
+            const specificChunk = iaposKnowledge.find(item => item.id === currentTopicChunkId);
+            if (specificChunk && specificChunk.titulo) {
+                // Intentar extraer el nombre del tema del título (ej: "Todo Prevencion Dia Preventivo - diabetes" -> "diabetes")
+                topicName = specificChunk.titulo.split(' - ').pop() || specificChunk.titulo;
+            }
+        }
+
+
+        // A) Identificar preguntas que requieren el rol de Experto Médico (conocimiento general)
+        if (lowerMessage.startsWith('¿qué es ') || lowerMessage.includes('síntomas de') || lowerMessage.includes('beneficios de')) {
+            promptRole = `Eres un médico profesional, muy informado y especialista en ${topicName}. Tu respuesta debe ser clara, en lenguaje sencillo pero científicamente precisa. NO necesitas un diagnóstico, solo brindar información.`;
+            useStrictRAG = false; // Permite a Gemini usar su conocimiento además del contexto de IAPOS.
+        } 
+        // B) Identificar preguntas que requieren el rol de Agente de IAPOS (información del programa)
+        else if (lowerMessage.startsWith('¿cómo se previene') || lowerMessage.includes('qué prácticas o análisis se realizan') || lowerMessage.includes('prestaciones')) {
+            promptRole = `Eres el asistente oficial del programa "Día Preventivo" de IAPOS. Debes ajustar tu respuesta estrictamente a la información proporcionada en el contexto sobre el programa y sus prestaciones, sin añadir información externa.`;
+            useStrictRAG = true; // Obliga a Gemini a usar SÓLO el contexto RAG.
+        } 
+        // C) Rol por defecto (otras preguntas)
+        else {
+            promptRole = `Eres un asistente virtual amable y servicial del programa "Día Preventivo" de IAPOS. Tu objetivo es brindar información precisa y útil a los afiliados. Responde siempre directamente, sin mencionar que la "información fue proporcionada" o "según el contexto".`;
+            useStrictRAG = false; 
+        }
+
+        // --- 3. CONSTRUCCIÓN DEL PROMPT PARA PREGUNTAS GENERALES ---
+        let fullPrompt = `${promptRole}\n\n`; // Comienza con el rol definido
+        
+        // Ejecutar el RAG (búsqueda de contexto)
+        let infoContext = buscarInfoIAPOS(message, currentTopicChunkId);
+        
+        console.log(`--- INICIO DEPURACIÓN RAG para QUERY: "${message}" (currentTopicChunkId: ${currentTopicChunkId})---`);
+        // NOTA: La función buscarInfoIAPOS ya tiene logs de los resultados, así que no los repetimos aquí.
+        console.log(`Contexto IAPOS FINAL que se pasa a Gemini (longitud: ${infoContext.length}):`);
+        // console.log(infoContext); // Descomentar solo si necesitas ver el texto completo del contexto
+        console.log(`--- FIN DEPURACIÓN RAG para QUERY: "${message}" ---`);
+
 
         if (infoContext) {
-            fullPrompt += `Información de contexto IAPOS relevante:\n${infoContext}\n\n`;
-        } else {
-            fullPrompt += `No se encontró información específica en la base de conocimiento de IAPOS para tu pregunta.`;
+            fullPrompt += `Información de contexto relevante del programa Día Preventivo:\n${infoContext}\n\n`;
+        } 
+        
+        // Si no hay contexto RAG Y se exige estricto RAG (useStrictRAG), se le da una instrucción de fallback
+        if (!infoContext && useStrictRAG) {
+            fullPrompt += `No se encontró información específica en tu base de conocimiento (IAPOS) para esta pregunta. Debes responder indicando amablemente que no tienes el detalle de esa prestación o práctica, y sugiriendo que consulte el folleto oficial del programa Día Preventivo de IAPOS.`;
         }
-
-        fullPrompt += `Pregunta del usuario: "${message}"\n`;
-        fullPrompt += `Tu respuesta debe ser útil y basada solo en el contexto proporcionado sobre el programa Día Preventivo de IAPOS.`;
-
-        // Si el contexto está vacío, podemos dar una respuesta predeterminada más inteligente
-        if (!infoContext && !isAskingForResults) {
-            fullPrompt = `Eres un asistente virtual amable y servicial de IAPOS, enfocado en brindar información precisa y útil sobre el programa "Día Preventivo".
-            La pregunta del usuario es: "${message}".
-            No se encontró información relevante en tu base de conocimiento para esta pregunta específica sobre el programa Día Preventivo.
-            Por favor, responde amablemente que no tienes información para esa consulta y sugiere que el usuario puede explorar los temas disponibles en el menú de categorías o reformular su pregunta para que se ajuste mejor al programa.`;
+        
+        // Si no se exige estricto RAG (Expertos), se le dice que use su conocimiento si no hay contexto
+        else if (!infoContext && !useStrictRAG) {
+            fullPrompt += `Puedes utilizar tu conocimiento general de salud para responder, manteniendo un tono de prevención y sin dar diagnósticos.`;
         }
+        
+        fullPrompt += `\n\nPregunta del usuario: "${message}"\n`;
+        fullPrompt += `Tu respuesta debe ser útil, amigable y ajustada a las instrucciones de rol.`;
 
-
-        // Usar el modelo de Gemini para generar la respuesta
+        // --- 4. LLAMADA A GEMINI ---
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
         const text = response.text();
 
-        res.json({ response: text }); // Enviar la respuesta del bot
+        res.json({ response: text });
 
     } catch (error) {
-        console.error('Error al comunicarse con la API de Gemini:', error);
+        console.error('Error en la ruta /chat (general):', error);
         res.status(500).json({ error: 'Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo más tarde.' });
     }
 });
 
+async function saveDataToSheet(data) {
+    if (!doc) throw new Error('Google Sheet not initialized');
+    const sheet = doc.sheetsByTitle["hoja_iapos"]; // Asegúrate de que el nombre de la hoja sea correcto
+    if (!sheet) throw new Error('Hoja "hoja_iapos" no encontrada.');
+    const dniLimpio = data.DNI.replace(/^'/, '');
+    const valoresDeFila = [dniLimpio, data['Fecha de Nacimiento'], data.Apellido, data.Nombre, data.Edad, data.Email, data.Telefono, data['Sexo biologico'], data['Genero autopercibido'], data.Altura, data.Peso, data.BMI, data['Categoria BMI'], data.Hipertension, data.Diabetes, data.Colesterol, data.Depresion, data['Actividad fisica'], data.sedentarismo, data['Abuso alcohol y/o drogas'], data.Stress, data['Exceso preocupacion salud'], data['Exceso pantallas'], data.Fuma, data.Fumador_cronico, data['Hipertension familiar'], data['Diabetes familiar'], data['Adicciones familiar'], data['Obesidad familiar'], data['Depresion familiar'], data['Violencia familiar'], data['Cancer de colon'], data['Cancer de mama'], data['Cancer cuello utero'], data['Cancer de prostata']];
+    await sheet.addRow(valoresDeFila);
+    console.log('Datos guardados correctamente.');
+}
+app.post('/saveData', async (req, res) => {
+    console.log('✅ Petición POST a /saveData recibida.');
+    console.log('Datos a guardar:', req.body);
+
+    if (!doc) {
+        console.error('❌ Error: El documento de Google Sheet no está inicializado.');
+        return res.status(500).json({ error: 'Servidor no conectado a Google Sheets.' });
+    }
+
+    try {
+        // Asegúrate de que el nombre de la hoja coincida con tu hoja de cálculo
+        const sheetTitle = 'Hoja 1'; // O el nombre que uses, por ejemplo 'Respuestas'
+        const sheet = doc.sheetsByTitle[sheetTitle];
+
+        if (!sheet) {
+            console.error(`❌ Error: La hoja "${sheetTitle}" no se encuentra en el documento.`);
+            return res.status(404).json({ error: `La hoja "${sheetTitle}" no se encuentra.` });
+        }
+
+        // Usa req.body directamente, ya que google-spreadsheet lo mapea a las columnas
+        const newRow = req.body;
+        newRow.Timestamp = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+
+        await sheet.addRow(newRow);
+
+        console.log('✅ Datos guardados con éxito en Google Sheets.');
+        res.status(200).json({ message: 'Datos guardados correctamente.' });
+
+    } catch (error) {
+        console.error('❌ Error al guardar datos en Google Sheets:', error);
+        res.status(500).json({ error: 'Error interno del servidor al guardar los datos.' });
+    }
+});
+
+// =========================================================================
+// RUTA PARA OBTENER INFORMACIÓN DE DNI
+// =========================================================================
+app.get('/checkDNI/:dni', async (req, res) => {
+    const dniToCheck = req.params.dni;
+    console.log(`Petición GET para verificar DNI: ${dniToCheck}`);
+    
+    // Verifica si el documento está inicializado
+    if (!doc) {
+        return res.status(500).json({ error: 'Google Sheet document not initialized.' });
+    }
+
+    try {
+        const sheet = doc.sheetsByTitle['Hoja 1'];
+        if (!sheet) {
+            return res.status(404).json({ error: 'Hoja "Hoja 1" no encontrada.' });
+        }
+
+        const rows = await sheet.getRows();
+        
+        const foundRow = rows.find(row => row.get('DNI')?.toString() === dniToCheck);
+
+        if (foundRow) {
+            return res.status(200).json({
+                exists: true,
+                nombre: foundRow.get('Nombre'),
+                apellido: foundRow.get('Apellido'),
+                fechaDeNacimiento: foundRow.get('Fecha de Nacimiento')
+            });
+        } else {
+            return res.status(200).json({ exists: false });
+        }
+    } catch (error) {
+        console.error('Error al verificar DNI:', error);
+        return res.status(500).json({ error: 'Error del servidor al verificar el DNI.' });
+    }
+});
 
 // 10. Iniciar el servidor
 app.listen(port, () => {
